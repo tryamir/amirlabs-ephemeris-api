@@ -1,0 +1,30 @@
+import { Router, type Request, type Response } from 'express';
+import { calculateSolarReturn, type SolarReturnInput } from '../services/solarReturn.js';
+
+const router = Router();
+
+router.post('/', (req: Request, res: Response) => {
+  const { sunLongitude, year, birthMonth, birthDay, latitude, longitude } =
+    req.body as SolarReturnInput;
+
+  if (
+    [sunLongitude, year, birthMonth, birthDay, latitude, longitude].some(
+      v => v === undefined || v === null,
+    )
+  ) {
+    res.status(400).json({
+      error:
+        'Missing required fields: sunLongitude, year, birthMonth, birthDay, latitude, longitude',
+    });
+    return;
+  }
+
+  try {
+    const result = calculateSolarReturn({ sunLongitude, year, birthMonth, birthDay, latitude, longitude });
+    res.json(result);
+  } catch (err) {
+    res.status(422).json({ error: (err as Error).message });
+  }
+});
+
+export default router;
