@@ -43,5 +43,9 @@
 
     "esModuleInterop": true,
     "resolveJsonModule": true,
-  }
+  },
+
+  // Without this, tsc's default `**/*` would pull in `scripts/`, which is
+  // outside rootDir and is Deno/plain-Node tooling rather than app code.
+  "include": ["src"],
 }

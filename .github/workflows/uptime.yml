@@ -1,0 +1,43 @@
+# Scheduled uptime probe → PostHog. See scripts/probe.mjs.
+#
+# Monitoring, not a keep-alive: the app is *supposed* to stop when idle
+# (fly.toml sets auto_stop_machines = 'stop', min_machines_running = 0) and to
+# start itself again on the next request.
+#
+# Frequency is a deliberate trade-off. Fly's proxy stops an idle machine after a
+# few minutes, so a 15-minute probe wakes it roughly every time — the machine
+# ends up running maybe a third of the day (~$0.65/mo at 256mb shared-cpu) and
+# almost every probe registers as a cold start. That is fine for answering "is
+# it up?" and "what does a cold start cost?", but it means probe traffic must be
+# kept out of any question about *real* usage. Two things keep that honest:
+# probes are the only caller of /health, and they emit their own
+# `ephemeris.probe` event. The dashboard's traffic tiles exclude /health.
+#
+# Note: GitHub disables scheduled workflows in a repo with no activity for 60
+# days. If the probe goes quiet, check that before assuming the app is fine.
+
+name: Uptime probe
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch: # so a suspected outage can be checked by hand
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    name: Probe /health
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      # No npm install: the probe is dependency-free on purpose, so a broken
+      # lockfile can never be the reason monitoring stopped reporting.
+      - run: node scripts/probe.mjs
+        env:
+          POSTHOG_API_KEY: ${{ secrets.POSTHOG_API_KEY }}
