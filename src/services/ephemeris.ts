@@ -7,6 +7,15 @@ const { constants } = sweph;
 // the HouseSystem type. See: https://www.astro.com/swisseph/swephprg.htm#_Toc58931102
 export type HouseSystem = 'W' | 'P';
 
+// Which zodiac the returned longitudes are measured in. Sidereal (Lahiri) is
+// the default because it is what every existing caller already receives —
+// changing that silently would move every chart by ~24°.
+//
+// Tropical measures from the vernal equinox, sidereal from the fixed stars;
+// they differ by the ayanamsha, which is returned either way. Western
+// astrology reads tropical, Jyotish reads sidereal.
+export type Zodiac = 'sidereal' | 'tropical';
+
 export interface BirthData {
   year: number;
   month: number;   // 1-12
@@ -15,6 +24,7 @@ export interface BirthData {
   latitude: number;
   longitude: number;
   houseSystem?: HouseSystem;
+  zodiac?: Zodiac;
 }
 
 export interface PlanetPosition {
@@ -89,6 +99,10 @@ function getHouseNumber(planetLon: number, cusps: number[]): number {
 
 export function calculateChart(birth: BirthData): ChartResult {
   const houseSystem: HouseSystem = birth.houseSystem ?? 'W';
+  const zodiac: Zodiac = birth.zodiac ?? 'sidereal';
+  // Everything sweph returns is tropical unless asked otherwise, so a tropical
+  // chart is the sidereal one with this shift never applied.
+  const shift = zodiac === 'sidereal' ? 1 : 0;
 
   const julianDay = sweph.julday(
     birth.year, birth.month, birth.day, birth.hour,
@@ -96,21 +110,25 @@ export function calculateChart(birth: BirthData): ChartResult {
   );
 
   sweph.set_sid_mode(constants.SE_SIDM_LAHIRI, 0, 0);
+  // Returned in both modes: tropical callers need it to convert, and it is the
+  // only way to tell which zodiac a cached response was computed in.
   const ayanamsha = sweph.get_ayanamsa_ut(julianDay);
 
   const houseData = sweph.houses(julianDay, birth.latitude, birth.longitude, houseSystem);
-  const ascendant = ((houseData.data.points[0] ?? 0) - ayanamsha + 360) % 360;
+  const ascendant = ((houseData.data.points[0] ?? 0) - ayanamsha * shift + 360) % 360;
 
-  // For Whole Sign, cusps must sit at exactly 0° of each sidereal sign starting
-  // from the sidereal ascendant's sign.  Using sweph's tropical Whole Sign cusps
-  // and then subtracting ayanamsha shifts them away from sidereal sign boundaries,
-  // causing planets near cusps to land in the wrong house.
+  // For Whole Sign, cusps must sit at exactly 0° of each sign starting from the
+  // ascendant's sign.  Using sweph's tropical Whole Sign cusps and then
+  // subtracting ayanamsha shifts them away from sidereal sign boundaries,
+  // causing planets near cusps to land in the wrong house. The same derivation
+  // works for tropical, since it starts from whichever ascendant was computed
+  // above.
   const rawCusps: number[] = (() => {
     if (houseSystem === 'W') {
       const ascSignIndex = Math.floor(ascendant / 30) % 12;
       return Array.from({ length: 12 }, (_, i) => ((ascSignIndex + i) % 12) * 30);
     }
-    return houseData.data.houses.map(lon => ((lon - ayanamsha) + 360) % 360);
+    return houseData.data.houses.map(lon => ((lon - ayanamsha * shift) + 360) % 360);
   })();
 
   const houseCusps: HouseCusp[] = rawCusps.map((lon, i) => {
@@ -118,7 +136,9 @@ export function calculateChart(birth: BirthData): ChartResult {
     return { house: i + 1, longitude: lon, sign, degree };
   });
 
-  const calcFlags = constants.SEFLG_SPEED | constants.SEFLG_SIDEREAL;
+  const calcFlags = zodiac === 'sidereal'
+    ? constants.SEFLG_SPEED | constants.SEFLG_SIDEREAL
+    : constants.SEFLG_SPEED;
 
   const positions: PlanetPosition[] = [];
 
