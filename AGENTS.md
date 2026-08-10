@@ -68,6 +68,30 @@ table above.
   (`deno run --allow-net --allow-env`). No upsert: delete the old dashboard
   first or you get a duplicate.
 
+## Who calls this API
+
+**Only Supabase edge functions and the amirlabs admin console.** No app talks
+to this service directly, because doing so puts `API_KEY` inside a binary where
+it is extractable and unreachable by `rotate-key.sh`. Numae reads charts
+through the `natal-chart` edge function in `amirlabs_app`.
+
+## The zodiac parameter
+
+`/api/chart` takes an optional `zodiac` of `sidereal` or `tropical`.
+
+- **Sidereal (Lahiri) is the default and must stay the default.** Every
+  existing caller relies on it; flipping it would move every chart by the
+  ayanamsha, currently ~24°, which is enough to change the Sun's sign.
+- Tropical is the same calculation *without* the sidereal shift: no
+  `SEFLG_SIDEREAL` on the bodies, and no ayanamsha subtracted from the
+  ascendant or the Placidus cusps. Whole Sign derives its cusps from the
+  ascendant's sign, so it follows whichever zodiac was computed.
+- `ayanamsha` is returned in both modes — it is the only way a caller can tell
+  which zodiac a stored response came from.
+- The tests pin the *relationship*, not the numbers: the two modes differ by
+  exactly the ayanamsha for both the Sun and the ascendant. Keep them that way,
+  so they survive an ephemeris data update.
+
 ## Conventions
 
 - `npm test` builds first, then runs `node --test` over `dist/`.
