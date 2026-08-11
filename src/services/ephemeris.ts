@@ -1,4 +1,5 @@
 import sweph from 'sweph';
+import { applySiderealMode, type Ayanamsha } from './ayanamsha.js';
 
 const { constants } = sweph;
 
@@ -25,6 +26,10 @@ export interface BirthData {
   longitude: number;
   houseSystem?: HouseSystem;
   zodiac?: Zodiac;
+  // Ignored for a tropical chart, whose longitudes are not measured against
+  // the sidereal frame at all. The reported `ayanamsha` still follows it, since
+  // that is the number a tropical caller would convert with.
+  ayanamsha?: Ayanamsha;
 }
 
 export interface PlanetPosition {
@@ -109,7 +114,7 @@ export function calculateChart(birth: BirthData): ChartResult {
     constants.SE_GREG_CAL
   );
 
-  sweph.set_sid_mode(constants.SE_SIDM_LAHIRI, 0, 0);
+  applySiderealMode(birth.ayanamsha);
   // Returned in both modes: tropical callers need it to convert, and it is the
   // only way to tell which zodiac a cached response was computed in.
   const ayanamsha = sweph.get_ayanamsa_ut(julianDay);

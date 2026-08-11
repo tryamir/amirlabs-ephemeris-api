@@ -1,4 +1,5 @@
 import sweph from 'sweph';
+import { applySiderealMode } from './ayanamsha.js';
 import type { BirthData } from './ephemeris.js';
 
 const { constants } = sweph;
@@ -62,7 +63,11 @@ export function calculateDashas(birth: BirthData): MahaDasha[] {
     constants.SE_GREG_CAL
   );
 
-  sweph.set_sid_mode(constants.SE_SIDM_LAHIRI, 0, 0);
+  // The periods are read from the Moon's nakshatra, which is a division of the
+  // sidereal zodiac — so the ayanamsha moves the boundaries, and with them
+  // every date in the cycle. A dasha computed under one school is not the same
+  // cycle as one computed under another.
+  applySiderealMode(birth.ayanamsha);
 
   const moonResult = sweph.calc_ut(julianDay, constants.SE_MOON, constants.SEFLG_SPEED | constants.SEFLG_SIDEREAL);
   const moonLon = ((moonResult.data[0] ?? 0) + 360) % 360;

@@ -1,4 +1,5 @@
 import sweph from 'sweph';
+import { applySiderealMode, type Ayanamsha } from './ayanamsha.js';
 
 const { constants } = sweph;
 
@@ -24,6 +25,9 @@ export interface TransitSearchInput {
   startUTC: string;
   endUTC: string;
   coordinateSystem?: CoordinateSystem;
+  // Only consulted for a sidereal search — a tropical longitude is measured
+  // from the equinox and owes nothing to an ayanamsha.
+  ayanamsha?: Ayanamsha;
 }
 
 const BODY_IDS: Record<string, number> = {
@@ -93,9 +97,10 @@ export function calcBodyLongitude(
   julianDay: number,
   bodyId: number,
   coordinateSystem: CoordinateSystem = 'sidereal',
+  ayanamsha?: Ayanamsha,
 ): LongitudeSample {
   if (coordinateSystem === 'sidereal') {
-    sweph.set_sid_mode(constants.SE_SIDM_LAHIRI, 0, 0);
+    applySiderealMode(ayanamsha);
   }
 
   const flags = constants.SEFLG_SPEED | (coordinateSystem === 'sidereal' ? constants.SEFLG_SIDEREAL : 0);
@@ -249,15 +254,17 @@ export function findExactTransits(input: TransitSearchInput): LongitudeRoot[] {
 
   const bodyId = bodyIdForName(input.body);
   const coordinateSystem = input.coordinateSystem ?? 'sidereal';
+  const ayanamsha = input.ayanamsha;
   const targetLongitude = normalizeDegrees(input.targetLongitude);
   const startJulianDay = dateToJulianDay(startDate);
   const endJulianDay = dateToJulianDay(endDate);
 
-  const angleFn = (julianDay: number) => calcBodyLongitude(julianDay, bodyId, coordinateSystem).longitude;
+  const angleFn = (julianDay: number) =>
+    calcBodyLongitude(julianDay, bodyId, coordinateSystem, ayanamsha).longitude;
 
   return findAngularRootsInInterval(angleFn, targetLongitude, startJulianDay, endJulianDay).map(julianDay => ({
     julianDay,
     exactUTC: formatUTCSecond(julianDay),
-    longitude: calcBodyLongitude(julianDay, bodyId, coordinateSystem).longitude,
+    longitude: calcBodyLongitude(julianDay, bodyId, coordinateSystem, ayanamsha).longitude,
   }));
 }
