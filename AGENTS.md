@@ -1,7 +1,7 @@
 # ephemeris-api — agent guide
 
 Swiss Ephemeris REST API (Express + `sweph`), deployed to Fly.io. Consumed by
-the Supabase edge functions in `../amirlabs_app` and by the admin console at
+the Supabase edge functions in `../amirlabs-web` and by the admin console at
 `/admin/ephemeris` on amirlabs.app. Deploys on push to `main` via
 `.github/workflows/fly-deploy.yml`.
 
@@ -73,7 +73,7 @@ table above.
 **Only Supabase edge functions and the amirlabs admin console.** No app talks
 to this service directly, because doing so puts `API_KEY` inside a binary where
 it is extractable and unreachable by `rotate-key.sh`. Numae reads charts
-through the `natal-chart` edge function in `amirlabs_app`.
+through the `natal-chart` edge function in `amirlabs-web`.
 
 ## The zodiac parameter
 

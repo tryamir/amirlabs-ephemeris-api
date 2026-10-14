@@ -2,7 +2,7 @@
 // .github/workflows/uptime.yml; emits one `ephemeris.probe` event to PostHog.
 //
 // This is monitoring, NOT a keep-alive. The Supabase equivalent
-// (`amirlabs_app/src/pages/api/keepalive.ts`) exists because a free Supabase
+// (`amirlabs-web/src/pages/api/keepalive.ts`) exists because a free Supabase
 // project is *permanently paused* after 7 idle days and needs a manual restore.
 // Fly is not like that: `fly.toml` sets `auto_stop_machines = 'stop'` with
 // `auto_start_machines = true`, so an idle machine stops to save money and the

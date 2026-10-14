@@ -1,6 +1,6 @@
 // Creates the "Ephemeris API — Fly" dashboard in PostHog.
 //
-// Companion to `amirlabs_app/scripts/posthog_web_dashboards.ts` and
+// Companion to `amirlabs-web/scripts/posthog_web_dashboards.ts` and
 // `ordibehesht/scripts/posthog_dashboards.ts`, and the same caveat applies:
 // PostHog has no upsert for dashboards, so re-running creates a fresh copy.
 // Delete the old one first if you re-run after tweaking.

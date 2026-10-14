@@ -1,6 +1,6 @@
 // Backend telemetry → PostHog, for the Fly-hosted ephemeris API.
 //
-// Node counterpart of `amirlabs_app/supabase/functions/_shared/analytics.ts`,
+// Node counterpart of `amirlabs-web/supabase/functions/_shared/analytics.ts`,
 // and deliberately the same event and property shape: one shared PostHog
 // project, one `api.request` event, broken down by `function`. That keeps the
 // existing backend-wide "API Health" dashboard correct — Fly routes simply show
