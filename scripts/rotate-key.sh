@@ -44,7 +44,7 @@ REPO_ROOT="$(dirname "$SCRIPT_DIR")"
 # where both CLIs are linked.
 AMIRLABS_DIR="${AMIRLABS_DIR:-$(dirname "$REPO_ROOT")/amirlabs-web}"
 
-# Not updated, on purpose: repo/archive/numae-legacy's iOS app also sends this key
+# Not updated, on purpose: legacy Numae's iOS app (amirlabs-ios/apps/legacy/numae) also sends this key
 # (Utils/AstrologyService.swift reads `EphemerisAPIKey` from Info.plist, injected
 # at build time). That app is retired and out of use — confirmed August 2026 — so
 # it is deliberately left out. If it is ever revived, note that a shipped binary
