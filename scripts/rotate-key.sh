@@ -40,9 +40,9 @@ HEALTH_URL="https://ephemeris-api-wispy-wind-3393.fly.dev/api/version"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(dirname "$SCRIPT_DIR")"
-# Vercel and Supabase commands run from the amirlabs-web checkout, which is
-# where both CLIs are linked.
-AMIRLABS_DIR="${AMIRLABS_DIR:-$(dirname "$REPO_ROOT")/amirlabs-web}"
+# Vercel and Supabase commands run from amirlabs-apps/web (the site moved
+# there from the amirlabs-web repo), which is where both CLIs are linked.
+AMIRLABS_DIR="${AMIRLABS_DIR:-$(dirname "$REPO_ROOT")/amirlabs-apps/web}"
 
 # Not updated, on purpose: legacy Numae's iOS app (amirlabs-apps/apps/legacy/numae) also sends this key
 # (Utils/AstrologyService.swift reads `EphemerisAPIKey` from Info.plist, injected
@@ -142,10 +142,10 @@ echo
 bold "Checking project access"
 
 if [[ ! -d "$AMIRLABS_DIR" ]]; then
-  bad "amirlabs-web checkout not found at $AMIRLABS_DIR"
-  PROBLEMS+=("Clone it beside this repo, or set AMIRLABS_DIR=/path/to/amirlabs-web")
+  bad "amirlabs-apps/web not found at $AMIRLABS_DIR"
+  PROBLEMS+=("Clone amirlabs-apps beside this repo, or set AMIRLABS_DIR=/path/to/amirlabs-apps/web")
 else
-  ok "amirlabs-web at $AMIRLABS_DIR"
+  ok "amirlabs-apps/web at $AMIRLABS_DIR"
   # Probe the CLI rather than looking for a link file: `vercel link` writes
   # .vercel/project.json for a plain link but .vercel/repo.json when the project
   # is linked through its git repo, and only the CLI knows which counts.
@@ -153,8 +153,8 @@ else
     if vercel env ls --cwd "$AMIRLABS_DIR" >/dev/null 2>&1; then
       ok "Vercel project linked and readable"
     else
-      bad "amirlabs-web is not linked to a Vercel project"
-      PROBLEMS+=("Link it:  cd $AMIRLABS_DIR && vercel link")
+      bad "amirlabs-apps/web is not linked to a Vercel project"
+      PROBLEMS+=("Link it:  cd $AMIRLABS_DIR && vercel link --project amirlabs-web")
     fi
   fi
 fi
@@ -249,8 +249,8 @@ trap 'report_state; cleanup' ERR
 
 echo
 bold "Updating Supabase"
-# Run from the amirlabs-web checkout: the Supabase CLI drops a `supabase/.temp`
-# scaffold into whatever directory it runs in, and that repo is where it belongs
+# Run from amirlabs-apps/web: the Supabase CLI drops a `supabase/.temp`
+# scaffold into whatever directory it runs in, and that folder is where it belongs
 # (and is already gitignored there). Running it from here litters this repo.
 ( cd "$AMIRLABS_DIR" && supabase secrets set --env-file "$EPH_ENV" --project-ref "$SUPABASE_PROJECT_REF" >/dev/null )
 APPLIED+=("Supabase ($SUPABASE_PROJECT_REF)")
